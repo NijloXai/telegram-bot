@@ -11,3 +11,8 @@ Thumbs.db
 *.swo
 *.log
 *.tsbuildinfo
+
+# Claude Code
+.agents/
+.claude/
+skills-lock.json
