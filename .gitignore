@@ -15,4 +15,5 @@ Thumbs.db
 # Claude Code
 .agents/
 .claude/
+.mcp.json
 skills-lock.json
