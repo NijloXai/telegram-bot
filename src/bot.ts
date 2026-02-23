@@ -1,3 +1,15 @@
+/**
+ * bot.ts — Point d'entree du bot Mira.
+ *
+ * Responsabilites :
+ * - Validation des variables d'environnement au demarrage
+ * - Configuration de la chaine de middlewares (dmOnly -> session -> rateLimit)
+ * - Enregistrement des commandes (/start, /cancel, /help)
+ * - Handler catch-all pour les messages texte
+ * - Demarrage en mode webhook (production/Railway) ou polling (local)
+ * - Arret gracieux sur SIGINT/SIGTERM
+ */
+
 import "dotenv/config";
 import { Bot, session, webhookCallback } from "grammy";
 import type { BotContext, SessionData } from "./types.js";
@@ -28,12 +40,17 @@ for (const envVar of requiredEnvVars) {
 // --- Bot instance ---
 const bot = new Bot<BotContext>(process.env.TELEGRAM_BOT_TOKEN!);
 
-// --- Middlewares (ordre : dmOnly -> session -> rateLimit) ---
+// --- Middlewares ---
+// Ordre critique :
+// 1. dmOnly filtre les groupes AVANT que la session ne soit chargee (evite des lectures Supabase inutiles)
+// 2. session charge/sauvegarde l'etat de conversation depuis Supabase
+// 3. rateLimit est APRES session car il a besoin de ctx.from
 bot.use(dmOnly);
 bot.use(
   session<SessionData, BotContext>({
     initial: initialSession,
     storage: createSessionStorage(),
+    // Cle de session = ID Telegram de l'utilisateur (chaque utilisateur a sa propre session)
     getSessionKey: (ctx) => ctx.from?.id.toString(),
   })
 );
@@ -44,7 +61,8 @@ bot.command("start", handleStart);
 bot.command("cancel", handleCancel);
 bot.command("help", handleHelp);
 
-// --- Messages (catch-all apres les commandes) ---
+// --- Messages ---
+// Catch-all : recoit tout message qui n'est pas une commande
 bot.on("message", handleMessage);
 
 // --- Error handler ---
@@ -57,6 +75,7 @@ bot.catch((err) => {
 
 // --- Start ---
 async function start() {
+  // Definit les commandes visibles dans le menu du bot Telegram (en russe)
   await bot.api.setMyCommands([
     { command: "start", description: "Начать новый разговор" },
     { command: "cancel", description: "Отменить разговор" },
@@ -64,12 +83,14 @@ async function start() {
   ]);
 
   if (process.env.NODE_ENV === "production") {
+    // Production (Railway) : serveur HTTP qui recoit les webhooks de Telegram
     const { createServer } = await import("node:http");
     const port = parseInt(process.env.PORT || "3000", 10);
     const handler = webhookCallback(bot, "http");
 
     const server = createServer(async (req, res) => {
       try {
+        // Seul POST est traite (webhooks Telegram), GET sert de health check
         if (req.method === "POST") {
           await handler(req, res);
         } else {
@@ -87,6 +108,7 @@ async function start() {
       logger.info({ port }, "Bot started in webhook mode");
     });
   } else {
+    // Dev local : polling (pas besoin de configurer un webhook)
     await bot.start({
       onStart: (botInfo) => {
         logger.info(

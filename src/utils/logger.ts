@@ -1,3 +1,11 @@
+/**
+ * logger.ts — Instance pino partagee par tout le projet.
+ *
+ * En production : JSON (pour l'ingestion par Railway/services de logs).
+ * En developpement : pino-pretty pour une sortie lisible dans le terminal.
+ * Niveau debug en dev, info en prod.
+ */
+
 import pino from "pino";
 
 const logger = pino({

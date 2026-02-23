@@ -1,3 +1,10 @@
+/**
+ * help.ts — Handler de la commande /help.
+ *
+ * Affiche un message d'aide statique en russe avec la liste
+ * des commandes disponibles.
+ */
+
 import type { BotContext } from "../types.js";
 
 export async function handleHelp(ctx: BotContext): Promise<void> {
