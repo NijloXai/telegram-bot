@@ -45,16 +45,26 @@ export async function rateLimit(ctx: BotContext, next: NextFunction): Promise<vo
   // Fenetre glissante : ne garde que les timestamps des 10 dernieres secondes
   const recent = userTimestamps.filter((t) => now - t < RATE_LIMIT_WINDOW);
 
-  if (recent.length >= RATE_LIMIT_MAX) {
-    logger.debug({ userId, count: recent.length }, "Rate limited");
-    await ctx.reply("Пожалуйста, не так быстро! Подождите несколько секунд.");
-    timestamps.set(userId, recent);
-    return;
-  }
-
-  // Le timestamp courant est ajoute APRES la verification (compte pour les prochaines)
+  // On compte la tentative actuelle quoiqu'il arrive
   recent.push(now);
   timestamps.set(userId, recent);
+
+  // Si on dépasse la limite autorisée
+  if (recent.length > RATE_LIMIT_MAX) {
+    // N'envoyer le message d'avertissement qu'à la PREMIÈRE infraction
+    if (recent.length === RATE_LIMIT_MAX + 1) {
+      logger.debug({ userId, count: recent.length }, "Rate limited - sending warning");
+      try {
+        await ctx.reply("Пожалуйста, не так быстро! Подождите несколько секунд.");
+      } catch (err) {
+        logger.warn({ userId, err }, "Failed to send rate-limit warning");
+      }
+    } else {
+      // Pour les spams supplémentaires dans la même fenêtre, on ignore (silent drop)
+      logger.debug({ userId, count: recent.length }, "Rate limited - silent drop");
+    }
+    return;
+  }
 
   await next();
 }
