@@ -38,7 +38,7 @@ export async function notifyTeam(
   ].join("\n");
 
   try {
-    await api.sendMessage(groupId, message);
+    await api.sendMessage(Number(groupId), message);
   } catch (error) {
     logger.error({ error, groupId }, "Failed to notify team");
   }

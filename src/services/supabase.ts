@@ -33,8 +33,7 @@ export async function saveProspect(
       delais: data.delais,
       email: data.email,
       whatsapp: data.whatsapp,
-      // Stocke l'objet ProspectResume complet en JSONB pour reference
-      resume: data,
+      resume_texte: data.resume_texte,
     })
     // Recupere l'UUID du prospect insere (utile pour le log)
     .select("id")
