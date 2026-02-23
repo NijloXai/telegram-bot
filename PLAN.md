@@ -96,9 +96,69 @@ telegram-bot/
 - tsconfig : ES2022, NodeNext, strict, outDir dist/
 - Scripts : dev (tsx watch), build (tsc), start (node dist/bot.js), test (vitest run)
 
-### Etape 2 — Tables Supabase (SQL manuel)
-- Table `prospects` (id, telegram_id, nom, whatsapp, email, entreprise, type_projet, delais, description, resume, statut, assigne_a)
-- Table `sessions` (key, value jsonb, updated_at)
+### Etape 2 — Tables Supabase (via MCP `apply_migration`)
+
+**Projet** : `elekdfrnmfmwykkymspf` | URL : `https://elekdfrnmfmwykkymspf.supabase.co`
+
+**Migration 1 — `create_prospects_table`** :
+```sql
+CREATE TABLE public.prospects (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  telegram_id bigint NOT NULL,
+  nom text,
+  whatsapp text,
+  email text,
+  entreprise text,
+  type_projet text,
+  delais text,
+  description text,
+  resume jsonb,
+  statut text NOT NULL DEFAULT 'pending',
+  assigne_a text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_prospects_telegram_id ON public.prospects (telegram_id);
+CREATE INDEX idx_prospects_statut ON public.prospects (statut);
+
+CREATE OR REPLACE FUNCTION public.update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = now(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prospects_updated_at
+  BEFORE UPDATE ON public.prospects
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+```
+
+**Migration 2 — `create_sessions_table`** :
+```sql
+CREATE TABLE public.sessions (
+  key text PRIMARY KEY,
+  value jsonb NOT NULL DEFAULT '{}'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TRIGGER sessions_updated_at
+  BEFORE UPDATE ON public.sessions
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+```
+
+**Migration 3 — `enable_rls_policies`** :
+```sql
+ALTER TABLE public.prospects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role full access on prospects"
+  ON public.prospects FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access on sessions"
+  ON public.sessions FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+```
+
+### Etape 2b — Verification + types generes (MCP)
+- `get_advisors` (security + performance) — verifier RLS et index
+- `generate_typescript_types` — generer les types DB pour typage `@supabase/supabase-js`
 
 ### Etape 3 — Types (`src/types.ts`)
 - TypeProjet, SessionData (avec lastActivity), Prospect, BotContext

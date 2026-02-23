@@ -34,7 +34,7 @@ src/
 │   ├── dm-only.ts      <- Ignore les groupes (sauf notifs equipe)
 │   └── rate-limit.ts   <- 3 msg / 10s max
 ├── services/
-│   ├── claude.ts       <- chatStream() + retry backoff
+│   ├── claude.ts       <- chatStream() (streaming Claude)
 │   ├── supabase.ts     <- Client + saveProspect()
 │   ├── session.ts      <- StorageAdapter Grammy <-> Supabase
 │   └── notification.ts <- notifyTeam() -> groupe prive
@@ -42,7 +42,7 @@ src/
 │   ├── logger.ts       <- Instance pino
 │   ├── validation.ts   <- Schema Zod + extractProspectData()
 │   └── stream.ts       <- streamToTelegram() (edit 500ms + clean JSON)
-└── types.ts            <- TypeProjet, SessionData, Prospect, BotContext
+└── types.ts            <- TypeProjet, SessionData, ProspectResume, BotContext
 ```
 
 ## Regles metier importantes
