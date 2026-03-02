@@ -15,7 +15,7 @@ Mira receptionne les prospects venant d'Instagram (50k+ abonnes), guide la conve
 - **Logger** : pino (pino-pretty en dev, JSON en prod)
 - **Tests** : vitest
 - **Package manager** : npm
-- **Deploiement** : Railway (webhook en prod, polling en local)
+- **Deploiement** : Railway (webhook en prod, polling en local) — **EN LIGNE**
 
 ## Architecture
 
@@ -61,6 +61,11 @@ src/
 - **Rate limit** : 3 messages / 10 secondes
 - **Max tokens Claude** : 1024
 - **Historique** : tronque aux 20 derniers messages avant envoi a Claude
+- **Budget minimum** : 500€ — en dessous, Mira eduque le prospect et decline poliment (suggere Tilda/Wix)
+- **Fourchettes de prix** : mentionnees en Phase 2 apres identification du type de projet (landing ~500€, site vitrine 1000-2500€, e-commerce/app 3000-5000€+)
+- **Score de qualification** : 1-5 attribue par Claude (1=budget insuffisant/pas interesse, 5=budget excellent+projet clair+urgent+tous contacts)
+- **Prospects refuses** : sauvegardes dans Supabase avec score 1-2, notifies a l'equipe avec indicateur rouge
+- **Notification enrichie** : emoji conditionnel au score (feu 4-5, jaune 3, rouge 1-2) + budget affiche
 
 ## Commandes
 
@@ -77,6 +82,15 @@ src/
 - `SUPABASE_SERVICE_KEY` — cle service_role Supabase
 - `TELEGRAM_GROUP_ID` — ID du groupe prive equipe
 - `NODE_ENV` — "production" en prod (active webhook + pino JSON)
+
+## Production (Railway)
+
+- **URL** : `telegram-bot-production-57c2.up.railway.app`
+- **Mode** : webhook (Telegram envoie les messages directement au serveur)
+- **Variables d'env** : configurees dans le dashboard Railway
+- **Logs** : pino JSON, visibles dans le dashboard Railway
+- **Webhook Telegram** : configure via `api.telegram.org/bot.../setWebhook`
+- **Redeploy** : automatique a chaque push sur `main` (si repo GitHub lie)
 
 ## Conventions
 

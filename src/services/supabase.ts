@@ -33,6 +33,8 @@ export async function saveProspect(
       delais: data.delais,
       email: data.email,
       whatsapp: data.whatsapp,
+      budget: data.budget,
+      score_qualification: data.score_qualification,
       resume_texte: data.resume_texte,
     })
     // Recupere l'UUID du prospect insere (utile pour le log)

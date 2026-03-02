@@ -21,19 +21,29 @@ export async function notifyTeam(
     return;
   }
 
+  // Emoji du score pour lecture rapide dans le groupe
+  const scoreEmoji =
+    data.score_qualification >= 4
+      ? "\u{1F525}"
+      : data.score_qualification >= 3
+        ? "\u{1F7E1}"
+        : "\u{1F534}";
+
   // Message en russe (resume toujours en russe comme defini dans le prompt Claude)
   const message = [
-    "\u{1F4E9} Новый лид от Мира!",
+    `\u{1F4E9} Новый лид от Мира! ${scoreEmoji} ${data.score_qualification}/5`,
     "",
     `Имя: ${data.nom ?? "—"}`,
     `Компания: ${data.entreprise ?? "—"}`,
     `Тип проекта: ${data.type_projet ?? "—"}`,
+    `Бюджет: ${data.budget ?? "—"}`,
     `Сроки: ${data.delais ?? "—"}`,
     `Email: ${data.email ?? "—"}`,
     `WhatsApp: ${data.whatsapp ?? "—"}`,
     "",
     `Описание: ${data.description ?? "—"}`,
     "",
+    `Оценка: ${data.score_qualification}/5 ${scoreEmoji}`,
     `Резюме: ${data.resume_texte}`,
   ].join("\n");
 

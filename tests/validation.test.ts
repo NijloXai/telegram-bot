@@ -9,6 +9,8 @@ const validProspect = {
   delais: "2 месяца",
   email: "ivan@test.com",
   whatsapp: "+79001234567",
+  budget: "2000€",
+  score_qualification: 4,
   resume_texte: "Клиент хочет сайт-визитку для компании",
 };
 
@@ -27,6 +29,8 @@ describe("prospectSchema", () => {
       delais: null,
       email: null,
       whatsapp: null,
+      budget: null,
+      score_qualification: 1,
       resume_texte: "Резюме без данных",
     });
     expect(result.success).toBe(true);
@@ -114,6 +118,8 @@ describe("extractProspectData", () => {
       delais: null,
       email: null,
       whatsapp: null,
+      budget: null,
+      score_qualification: 2,
       resume_texte: "Клиент отказался от предоставления данных",
     });
     const result = extractProspectData(json);

@@ -22,7 +22,11 @@ export const prospectSchema = z.object({
   delais: z.string().nullable(),
   email: z.string().nullable(),
   whatsapp: z.string().nullable(),
-  // Seul champ obligatoire (non-nullable) : Claude doit toujours fournir un resume
+  // Budget texte libre, nullable car le prospect peut ne pas le communiquer
+  budget: z.string().nullable(),
+  // Score obligatoire (1-5), Claude le fournit toujours dans le bloc PROSPECT_COMPLETE
+  score_qualification: z.number().int().min(1).max(5),
+  // Seul autre champ obligatoire (non-nullable) : Claude doit toujours fournir un resume
   resume_texte: z.string(),
 });
 

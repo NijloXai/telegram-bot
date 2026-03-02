@@ -47,6 +47,10 @@ export interface ProspectResume {
   delais: string | null;
   email: string | null;
   whatsapp: string | null;
+  // Budget indique par le prospect (texte libre, ex: "1500€", "3000-5000€")
+  budget: string | null;
+  // Score de qualification 1-5 attribue par Claude selon les criteres du prompt
+  score_qualification: number;
   // Toujours en russe, quelle que soit la langue de la conversation
   resume_texte: string;
 }
