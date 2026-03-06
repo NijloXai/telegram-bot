@@ -11,7 +11,7 @@
  */
 
 import "dotenv/config";
-import { Bot, session, webhookCallback } from "grammy";
+import { Bot, session } from "grammy";
 import type { BotContext, SessionData } from "./types.js";
 import { createSessionStorage } from "./services/session.js";
 import { initialSession, handleStart } from "./handlers/start.js";
@@ -35,6 +35,11 @@ for (const envVar of requiredEnvVars) {
     logger.fatal(`Missing required env var: ${envVar}`);
     process.exit(1);
   }
+}
+
+if (process.env.TELEGRAM_GROUP_ID && isNaN(Number(process.env.TELEGRAM_GROUP_ID))) {
+  logger.fatal("TELEGRAM_GROUP_ID must be a valid number");
+  process.exit(1);
 }
 
 // --- Bot instance ---
@@ -86,21 +91,28 @@ async function start() {
     // Production (Railway) : serveur HTTP qui recoit les webhooks de Telegram
     const { createServer } = await import("node:http");
     const port = parseInt(process.env.PORT || "3000", 10);
-    const handler = webhookCallback(bot, "http");
 
+    // On ne passe PAS par webhookCallback car il attend la fin du traitement
+    // avant de repondre a Telegram. Si le traitement (streaming Claude) prend
+    // trop longtemps, Telegram renvoie le meme update -> double traitement.
+    // A la place, on repond 200 immediatement et on traite en arriere-plan.
     const server = createServer(async (req, res) => {
-      try {
-        // Seul POST est traite (webhooks Telegram), GET sert de health check
-        if (req.method === "POST") {
-          await handler(req, res);
-        } else {
-          res.writeHead(200).end("OK");
+      if (req.method === "POST") {
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) chunks.push(chunk as Buffer);
+        const body = Buffer.concat(chunks).toString();
+
+        // Repondre 200 immediatement pour eviter les retries Telegram
+        res.writeHead(200).end();
+
+        try {
+          const update = JSON.parse(body);
+          await bot.handleUpdate(update);
+        } catch (error) {
+          logger.error({ error }, "Error processing webhook update");
         }
-      } catch (error) {
-        logger.error({ error }, "Webhook handler error");
-        if (!res.headersSent) {
-          res.writeHead(500).end();
-        }
+      } else {
+        res.writeHead(200).end("OK");
       }
     });
 

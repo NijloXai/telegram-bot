@@ -24,7 +24,27 @@ import { extractProspectData } from "../utils/validation.js";
 import { initialSession } from "./start.js";
 import logger from "../utils/logger.js";
 
+// Garde anti-doublon : empeche le traitement simultane du meme update
+// (peut arriver si Telegram renvoie un update avant que le premier ne soit termine)
+const processingUpdates = new Set<number>();
+
 export async function handleMessage(ctx: BotContext): Promise<void> {
+  const updateId = ctx.update.update_id;
+
+  if (processingUpdates.has(updateId)) {
+    logger.warn({ updateId }, "Duplicate update ignored");
+    return;
+  }
+  processingUpdates.add(updateId);
+
+  try {
+    return await handleMessageInner(ctx);
+  } finally {
+    processingUpdates.delete(updateId);
+  }
+}
+
+async function handleMessageInner(ctx: BotContext): Promise<void> {
   const userId = ctx.from?.id;
   const text = ctx.message?.text;
 
